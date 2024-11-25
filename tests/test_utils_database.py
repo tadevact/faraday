@@ -65,6 +65,19 @@ def test_vulnerability_ddl_invariant(session):
 
 @pytest.mark.parametrize("obj_class, expected_unique_fields", list(UNIQUE_FIELDS.items()))
 def test_unique_fields_workspace(obj_class, expected_unique_fields, session):
+    """Test unique fields for a workspace object.
+    
+    Args:
+        obj_class (type): The class of the object to be tested.
+        expected_unique_fields (list): A list of field names expected to be unique.
+        session (sqlalchemy.orm.Session): The database session for querying.
+    
+    Returns:
+        None
+    
+    Raises:
+        AssertionError: If the unique constraints do not match the expected unique fields.
+    """
     object_ = obj_class()
     unique_constraints = get_unique_fields(session, object_)
     for unique_constraint in unique_constraints:
