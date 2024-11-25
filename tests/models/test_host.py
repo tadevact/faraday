@@ -30,6 +30,26 @@ from tests import factories
 def test_vulnerability_count(with_host_vulns, with_service_vulns, host,
                              session, service_factory,
                              vulnerability_factory, vulnerability_web_factory):
+    """Test the vulnerability count calculation for a host.
+    
+    This method creates host and service vulnerabilities based on the input parameters
+    and checks if the host's vulnerability count matches the expected count.
+    
+    Args:
+        with_host_vulns (bool): Flag to create host vulnerabilities.
+        with_service_vulns (bool): Flag to create service vulnerabilities.
+        host (Host): The host object to test.
+        session (Session): The database session.
+        service_factory (Factory): Factory to create service objects.
+        vulnerability_factory (Factory): Factory to create vulnerability objects.
+        vulnerability_web_factory (Factory): Factory to create web vulnerability objects.
+    
+    Returns:
+        None
+    
+    Raises:
+        AssertionError: If the host's vulnerability count doesn't match the expected count.
+    """
     expected_count = 0
 
     if with_host_vulns:
@@ -73,6 +93,20 @@ class TestUpdateHostnames:
         assert {hn.name for hn in host.hostnames} == {'test.com', 'other.com'}
 
     def test_set_to_empty_host(self, host_with_hostnames, session):
+        """Test setting host hostnames to an empty list.
+        
+        Args:
+            self: The test class instance.
+            host_with_hostnames (Host): A Host object with existing hostnames.
+            session (Session): The database session object.
+        
+        Returns:
+            None
+        
+        Raises:
+            AssertionError: If the number of deleted hostnames doesn't match the original count,
+                            or if the hostnames list is not empty after the operation.
+        """
         session.commit()
         n_hostnames = len(host_with_hostnames.hostnames)
         host_with_hostnames.set_hostnames([])
@@ -81,6 +115,19 @@ class TestUpdateHostnames:
         assert host_with_hostnames.hostnames == []
 
     def test_stays_equal(self, host_with_hostnames, session):
+        """Tests if the hostnames of a host object remain equal after shuffling and reassignment.
+        
+        Args:
+            self: The test class instance.
+            host_with_hostnames (Host): A host object with associated hostnames.
+            session (Session): A database session object for managing transactions.
+        
+        Returns:
+            None: This method doesn't return anything explicitly.
+        
+        Raises:
+            AssertionError: If the session is not clean or if the set of hostnames doesn't match after shuffling.
+        """
         new_value = [hn.name for hn in host_with_hostnames.hostnames]
         random.shuffle(new_value)
         host_with_hostnames.set_hostnames(new_value)
@@ -91,6 +138,19 @@ class TestUpdateHostnames:
                                      host_with_hostnames.hostnames}
 
     def test_all(self, host, session):
+        """Test the functionality of setting hostnames for a host object.
+        
+        Args:
+            self: The instance of the test class.
+            host (Host): The host object to be tested.
+            session (Session): The database session for managing objects.
+        
+        Returns:
+            None: This method doesn't return anything explicitly.
+        
+        Raises:
+            AssertionError: If any of the assertions fail during the test.
+        """
         a = Hostname(workspace=host.workspace, host=host, name='a')
         b = Hostname(workspace=host.workspace, host=host, name='b')
         session.add(a)
@@ -112,6 +172,19 @@ class TestUpdateHostnames:
         assert {hn.name for hn in host.hostnames} == {'b', 'c'}
 
     def test_change_one(self, host, session):
+        """Test changing a single hostname for a host.
+        
+        Args:
+            self: The test class instance.
+            host (Host): The host object to modify.
+            session (Session): The database session to use for operations.
+        
+        Returns:
+            None: This method doesn't return anything explicitly.
+        
+        Raises:
+            AssertionError: If any of the assertions fail during the test.
+        """
         hn = Hostname(workspace=host.workspace,
                       host=host,
                       name='x')
@@ -156,6 +229,23 @@ class TestHostAPI(ReadOnlyAPITests):
                         session,
                         querystring):
 
+        """Tests the vulnerability count functionality for hosts in a workspace.
+        
+        Args:
+            vulnerability_factory (Factory): Factory for creating vulnerability objects.
+            host_factory (Factory): Factory for creating host objects.
+            service_factory (Factory): Factory for creating service objects.
+            workspace_factory (Factory): Factory for creating workspace objects.
+            test_client (TestClient): The test client for making HTTP requests.
+            session (Session): The database session for committing changes.
+            querystring (str): The query string format for the API request.
+        
+        Returns:
+            None: This method doesn't return anything, but uses assertions to validate the response.
+        
+        Raises:
+            AssertionError: If the response status code is not 200 or if the vulnerability counts don't match the expected values.
+        """
         workspace1 = workspace_factory.create()
         workspace2 = workspace_factory.create()
         session.add(workspace1)
@@ -215,6 +305,25 @@ class TestHostAPI(ReadOnlyAPITests):
                         session,
                         querystring):
 
+        """Test vulnerability count ignoring other workspaces
+        
+        This method tests the functionality of counting vulnerabilities for hosts in a specific workspace while ignoring hosts and vulnerabilities in other workspaces.
+        
+        Args:
+            vulnerability_factory (Factory): Factory for creating vulnerability objects
+            host_factory (Factory): Factory for creating host objects
+            service_factory (Factory): Factory for creating service objects
+            workspace_factory (Factory): Factory for creating workspace objects
+            test_client (TestClient): Test client for making HTTP requests
+            session (Session): Database session object
+            querystring (str): Query string format for the API endpoint
+        
+        Returns:
+            None: This method doesn't return anything, but uses assertions to verify the expected behavior
+        
+        Raises:
+            AssertionError: If any of the test conditions are not met
+        """
         workspace1 = workspace_factory.create()
         workspace2 = workspace_factory.create()
         session.add(workspace1)
