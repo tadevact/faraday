@@ -29,6 +29,19 @@ WEB_VULN_COUNT = C_WEB_VULN_COUNT + NC_WEB_VULN_COUNT
 
 
 def populate_workspace(workspace):
+    """Populates a workspace with various entities and vulnerabilities.
+    
+    This method creates a host, service, and source code for the given workspace,
+    then generates both confirmed and non-confirmed vulnerabilities of different types
+    (standard, web, and source code) associated with these entities.
+    
+    Args:
+        workspace: The workspace object to populate with entities and vulnerabilities.
+    
+    Returns:
+        None
+    
+    """
     host = HostFactory.create(workspace=workspace)
     service = ServiceFactory.create(workspace=workspace, host=host)
     code = SourceCodeFactory.create(workspace=workspace)
@@ -76,6 +89,22 @@ def populate_workspace(workspace):
 
 
 def test_vuln_count(workspace, second_workspace, database):
+    """Tests the vulnerability count functionality for a workspace.
+    
+    Args:
+        workspace (Workspace): The primary workspace to test.
+        second_workspace (Workspace): A secondary workspace for comparison.
+        database (Database): The database connection object.
+    
+    Returns:
+        None
+    
+    Raises:
+        AssertionError: If the vulnerability counts do not match the expected values.
+    
+    Note:
+        This test is skipped for SQLite databases.
+    """
     if database.engine.dialect.name == 'sqlite':
         return
     populate_workspace(workspace)
@@ -91,6 +120,23 @@ def test_vuln_count(workspace, second_workspace, database):
 
 
 def test_vuln_count_confirmed(workspace, second_workspace, database):
+    """Test vulnerability count confirmation for a workspace
+    
+    This method tests the vulnerability count functionality for a given workspace.
+    It populates the workspace and a second workspace, then queries the database
+    to confirm that the vulnerability counts match the expected values.
+    
+    Args:
+        workspace (Workspace): The primary workspace to test
+        second_workspace (Workspace): A secondary workspace for comparison
+        database (Database): The database connection object
+    
+    Returns:
+        None
+    
+    Note:
+        This test is skipped for SQLite databases.
+    """
     if database.engine.dialect.name == 'sqlite':
         return
     populate_workspace(workspace)
@@ -107,6 +153,24 @@ def test_vuln_count_confirmed(workspace, second_workspace, database):
 
 
 def test_vuln_no_count(workspace, second_workspace, database):
+    """Tests vulnerability counts when they are not set.
+    
+    This method checks if the vulnerability counts (web, code, standard, and total) are None for a workspace after populating it. It skips the test for SQLite databases.
+    
+    Args:
+        workspace (Workspace): The primary workspace to be tested.
+        second_workspace (Workspace): A secondary workspace to be populated.
+        database (Database): The database object to check the dialect.
+    
+    Returns:
+        None
+    
+    Raises:
+        AssertionError: If any of the vulnerability counts are not None.
+    
+    Note:
+        This test is skipped for SQLite databases.
+    """
     if database.engine.dialect.name == 'sqlite':
         return
 
