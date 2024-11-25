@@ -15,6 +15,18 @@ from faraday.server.models import (
 
 
 def test_delete_user(workspace, session):
+    """Tests the deletion of a user associated with a workspace.
+    
+    Args:
+        workspace: The workspace object to test.
+        session: The database session object.
+    
+    Returns:
+        None
+    
+    Raises:
+        AssertionError: If the workspace creator is not initially set or if it's not None after deletion.
+    """
     assert workspace.creator
     session.commit()
     user = workspace.creator
@@ -28,6 +40,21 @@ class TestCascadeDelete:
     def populate(self, workspace, service, session, user,
                  vulnerability_factory, credential_factory,
                  empty_command_factory):
+        """Populates the database with test data for various models including workspace, host, service, vulnerabilities, credentials, files, comments, and commands.
+        
+        Args:
+            self: The instance of the class containing this method.
+            workspace (Workspace): The workspace object to populate.
+            service (Service): The service object to associate with the workspace.
+            session (Session): The database session for committing changes.
+            user (User): The user object to associate with created entities.
+            vulnerability_factory (VulnerabilityFactory): Factory for creating vulnerability objects.
+            credential_factory (CredentialFactory): Factory for creating credential objects.
+            empty_command_factory (EmptyCommandFactory): Factory for creating empty command objects.
+        
+        Returns:
+            None: This method doesn't return anything, it populates the database as a side effect.
+        """
         session.commit()
         self.session = session
         assert service.workspace_id == workspace.id
@@ -156,6 +183,20 @@ class TestCascadeDelete:
     def assert_deletes(self, *objs, **kwargs):
         # this could be better with python3 (like in the comment before the function
         # definition)
+        """Assert and verify deletion of database objects.
+        
+        Args:
+            *objs (object): Variable number of database objects to be checked for deletion.
+            **kwargs: Arbitrary keyword arguments.
+                should_delete (bool, optional): Flag to indicate if objects should be deleted. Defaults to True.
+        
+        Returns:
+            generator: A generator that yields once after initial checks, allowing for additional operations before final assertion.
+        
+        Raises:
+            AssertionError: If any object lacks an id, or if the deletion status doesn't match the expected outcome.
+        
+        """
         should_delete = kwargs.get('should_delete', True)
         assert all(obj.id is not None for obj in objs)
         ids = [(obj.__table__, obj.id) for obj in objs]
@@ -170,6 +211,21 @@ class TestCascadeDelete:
                 table.columns['id'] == id_).count() == expected_count
 
     def test_delete_host_cascade(self):
+        """
+        Tests the cascade deletion of a host and its related objects.
+        
+        This method verifies that when a host is deleted, all associated objects
+        (services, vulnerabilities, and credentials) are also deleted in a cascading manner.
+        
+        Args:
+            self: The test case instance.
+        
+        Returns:
+            None
+        
+        Raises:
+            AssertionError: If the expected objects are not deleted during the cascade operation.
+        """
         with self.assert_deletes(self.host, self.service,
                                  self.host_vuln, self.service_vuln,
                                  self.host_cred, self.service_cred):
@@ -201,6 +257,23 @@ class TestCascadeDelete:
             self.session.delete(self.host)
 
     def test_delete_user_does_not_delete_childs(self):
+        """Test method to ensure that deleting a user does not delete associated objects.
+        
+        This method tests the behavior of deleting a user and verifies that:
+        1. Associated objects (workspace, host, service, credentials, vulnerabilities,
+           attachments, comments, and commands) are not deleted.
+        2. The creator field of these associated objects is set to None.
+        3. The user's permission object is deleted.
+        
+        Args:
+            self: The test class instance.
+        
+        Returns:
+            None
+        
+        Raises:
+            AssertionError: If any of the assertions fail during the test.
+        """
         objs = [self.workspace, self.host, self.service,
                 self.host_cred, self.service_cred,
                 self.host_vuln, self.service_vuln,
