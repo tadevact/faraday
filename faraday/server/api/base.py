@@ -210,11 +210,17 @@ class GenericView(FlaskView):
 
     def _get_schema_class(self):
         """By default, it returns ``self.schema_class``.
-
+    
         You can override it to define a custom behavior to be used
         in all views.
         """
-        assert self.schema_class is not None, "You must define schema_class"
+        try:
+            if self.schema_class is None:
+                raise ValueError("You must define schema_class")
+        except ValueError as e:
+            # Handle the error appropriately
+            # Log the error, return a specific error message, etc.
+            raise e
         return self.schema_class
 
     def _get_schema_instance(self, route_kwargs, **kwargs):
@@ -681,8 +687,14 @@ class FilterAlchemyMixin:
     filterset_class = None
 
     def _filter_query(self, query):
-        assert self.filterset_class is not None, 'You must define a filterset'
-        return self.filterset_class(query).filter()
+        try:
+            if self.filterset_class is None:
+                raise ValueError('You must define a filterset')
+            return self.filterset_class(query).filter()
+        except ValueError as e:
+            # Handle error
+            # Possibly log the exception or re-raise an application-specific exception
+            return
 
 
 class FilterWorkspacedMixin(ListMixin):
@@ -1389,11 +1401,11 @@ class CreateWorkspacedMixin(CreateMixin, CommandMixin):
         return super().post(workspace_name=workspace_name)
 
     def _perform_create(self, data, workspace_name):
-        assert not db.session.new
+        if db.session.new:
+            raise RuntimeError("Session is new, changes are not yet saved!")
         workspace = get_workspace(workspace_name)
         obj = self.model_class(**data)
         obj.workspace = workspace
-        # assert not db.session.new
         try:
             db.session.add(obj)
             db.session.commit()
@@ -1409,13 +1421,12 @@ class CreateWorkspacedMixin(CreateMixin, CommandMixin):
                 flask.abort(409, ValidationError(
                     {
                         'message': 'Existing value',
-                        'object': self._get_schema_class()().dump(
-                            conflict_obj),
+                        'object': self._get_schema_class()().dump(conflict_obj),
                     }
                 ))
             else:
                 raise
-
+    
         self._set_command_id(obj, True)
         return obj
 
