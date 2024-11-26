@@ -543,7 +543,8 @@ def manage_relationships(processed_data, result, workspace_id=None):
 
 
 def _create_command_object_for(ws, created, obj, command: dict):
-    assert command is not None
+    if command is None:
+        raise ValueError("Expected command dictionary cannot be None")
     data = {
         'object_id': obj.id,
         'object_type': get_object_type_for(obj),
@@ -556,7 +557,8 @@ def _create_command_object_for(ws, created, obj, command: dict):
 
 
 def _create_command_json(ws_id: int, obj_id: int, command: dict) -> dict:
-    assert command is not None
+    if command is None:
+        raise ValueError("command must not be None")
     data = {
         'object_id': obj_id,
         'object_type': 'vulnerability',
@@ -665,9 +667,14 @@ def get_run_date(run_date_string):
 
 def _create_vuln(ws, vuln_data, command: dict, **kwargs):
     """Create standard or web vulnerabilities"""
-    assert 'host' in kwargs or 'service' in kwargs
-    assert not ('host' in kwargs and 'service' in kwargs)
-
+    if 'host' not in kwargs and 'service' not in kwargs:
+        logger.error("Either 'host' or 'service' must be present in kwargs")
+        raise ValueError("Either 'host' or 'service' must be present in kwargs")
+    
+    if 'host' in kwargs and 'service' in kwargs:
+        logger.error("Both 'host' and 'service' cannot be present simultaneously")
+        raise ValueError("Both 'host' and 'service' cannot be present simultaneously")
+    
     vuln_data = vuln_data.copy()
     vuln_data.update(kwargs)
 
@@ -1057,8 +1064,7 @@ class BulkCreateView(GenericWorkspacedView):
 
         if data['hosts']:
             # Create random file
-            chars = string.ascii_uppercase + string.digits
-            random_prefix = ''.join(random.choice(chars) for _ in range(30))  # nosec
+            random_prefix = secrets.token_urlsafe(30)
             json_file = f"{random_prefix}.json"
             file_path = CONST_FARADAY_HOME_PATH / 'uploaded_reports' / json_file
             with file_path.open('w') as output:
